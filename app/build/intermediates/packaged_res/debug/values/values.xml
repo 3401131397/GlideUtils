@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="ai_provider_entries">
+        <item>本地引擎 (Alpha-Beta)</item>
+        <item>OpenAI (GPT-4 / GPT-4o)</item>
+        <item>自定义API (兼容OpenAI接口)</item>
+    </string-array>
+    <string-array name="ai_provider_values">
+        <item>LOCAL</item>
+        <item>OPENAI</item>
+        <item>CUSTOM_API</item>
+    </string-array>
+    <color name="accent">#533483</color>
+    <color name="background">#1A1A2E</color>
+    <color name="black_piece">#333333</color>
+    <color name="ic_launcher_background">#1A1A2E</color>
+    <color name="primary">#E94560</color>
+    <color name="primary_dark">#0F3460</color>
+    <color name="red_piece">#D32F2F</color>
+    <color name="surface">#16213E</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#888888</color>
+    <string name="app_name">象棋AI助手</string>
+    <string name="settings_title">设置</string>
+    <style name="Theme.ChessHelper" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#E94560</item>
+        <item name="colorPrimaryVariant">#0F3460</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#533483</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="android:colorBackground">#1A1A2E</item>
+        <item name="colorSurface">#16213E</item>
+        <item name="android:statusBarColor">#0F3460</item>
+        <item name="android:navigationBarColor">#1A1A2E</item>
+    </style>
+    <style name="Theme.ChessHelper.Settings" parent="Theme.ChessHelper">
+        <item name="android:windowBackground">#1A1A2E</item>
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
+    </style>
+</resources>

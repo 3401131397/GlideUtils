@@ -144,7 +144,7 @@ public class ChessEngine {
             {-1, 2}, {1, 2}, {2, -1}, {2, 1}
     };
 
-    private static final int[] MA_LEG_RAW = {
+    private static final int[][] MA_LEG_RAW = {
             {-1, 0}, {-1, 0}, {0, -1}, {0, -1},
             {-1, 0}, {-1, 0}, {0, 1}, {0, 1}
     };

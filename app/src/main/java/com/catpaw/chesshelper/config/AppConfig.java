@@ -15,7 +15,8 @@ public class AppConfig {
     public enum AIProvider {
         LOCAL,       // 本地引擎
         OPENAI,      // OpenAI API
-        CUSTOM_API   // 自定义API（兼容OpenAI接口格式）
+        CUSTOM_API,  // 自定义API（兼容OpenAI接口格式）
+        AUTO         // 自动选择（优先本地，超时则云端）
     }
 
     private static final String KEY_SERVICE_ENABLED = "service_enabled";

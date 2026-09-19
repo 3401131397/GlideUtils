@@ -1,0 +1,14 @@
+[
+    {
+        "merged": "com.catpaw.chesshelper.app-mergeDebugResources-3:/layout/activity_main.xml",
+        "source": "com.catpaw.chesshelper.app-main-6:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.catpaw.chesshelper.app-mergeDebugResources-3:/layout/activity_settings.xml",
+        "source": "com.catpaw.chesshelper.app-main-6:/layout/activity_settings.xml"
+    },
+    {
+        "merged": "com.catpaw.chesshelper.app-mergeDebugResources-3:/layout/floating_chess_helper.xml",
+        "source": "com.catpaw.chesshelper.app-main-6:/layout/floating_chess_helper.xml"
+    }
+]

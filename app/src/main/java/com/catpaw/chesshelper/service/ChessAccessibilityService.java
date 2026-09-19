@@ -348,6 +348,7 @@ public class ChessAccessibilityService extends AccessibilityService implements S
                 break;
 
             case AUTO:
+
                 // 优先本地，超时则云端
                 calculateByLocalEngine(fen, isRedTurn);
                 mHandler.postDelayed(() -> {
