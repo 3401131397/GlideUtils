@@ -78,8 +78,14 @@ public class MainActivity extends AppCompatActivity {
         updateUI();
 
         // 注册广播接收器
-        registerReceiver(mProjectionRequestReceiver,
-                new IntentFilter("com.catpaw.chesshelper.REQUEST_PROJECTION"));
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(mProjectionRequestReceiver,
+                    new IntentFilter("com.catpaw.chesshelper.REQUEST_PROJECTION"),
+                    android.content.Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(mProjectionRequestReceiver,
+                    new IntentFilter("com.catpaw.chesshelper.REQUEST_PROJECTION"));
+        }
 
         // 注册识别回调
         ChessAccessibilityService.setRecognitionCallback(
