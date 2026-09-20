@@ -13,6 +13,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- 截屏权限 -->
     <uses-permission android:name="android.permission.PROJECT_MEDIA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
 
     <application
         android:name=".ChessApplication"
@@ -66,7 +67,8 @@
         <service
             android:name=".service.ScreenCaptureService"
             android:exported="false"
-            android:foregroundServiceType="mediaProjection" />
+            android:foregroundServiceType="mediaProjection">
+        </service>
 
     </application>
 
