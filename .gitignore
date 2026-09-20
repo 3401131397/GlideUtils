@@ -9,3 +9,6 @@
 .cxx
 *.apk
 *.aab
+.tools/
+build_apk.sh
+*.tar.gz
