@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
@@ -29,29 +30,17 @@ jobs:
         echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
         echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
         echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-        echo "/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_PATH
     
     - name: Accept Android SDK licenses
-      run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
-    
-    - name: Install SDK components
       run: |
+        yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
         yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0" || true
     
-    - name: Install Gradle 8.0
-      run: |
-        wget -q https://mirrors.aliyun.com/macports/distfiles/gradle/gradle-8.0-bin.zip -O /tmp/gradle.zip || \
-        wget -q https://services.gradle.org/distributions/gradle-8.0-bin.zip -O /tmp/gradle.zip
-        unzip -q /tmp/gradle.zip -d /opt/
-        echo "/opt/gradle-8.0/bin" >> $GITHUB_PATH
-        export PATH="/opt/gradle-8.0/bin:$PATH"
-        gradle --version
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
     
     - name: Build debug APK
-      run: |
-        export PATH="/opt/gradle-8.0/bin:$PATH"
-        cd ${{ github.workspace }}
-        gradle assembleDebug --no-daemon --stacktrace
+      run: ./gradlew assembleDebug --no-daemon --stacktrace
     
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
