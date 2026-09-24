@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">象棋AI助手</string>
-    <string name="settings_title">设置</string>
+    <string name="app_name">漫画阅读</string>
+    <string name="tab_home">首页</string>
+    <string name="tab_tags">标签</string>
+    <string name="tab_rank">排行</string>
+    <string name="search_hint">搜索漫画…</string>
+    <string name="network_error">网络错误，请检查连接</string>
+    <string name="loading">加载中…</string>
+    <string name="retry">重试</string>
+    <string name="rank_daily">日榜</string>
+    <string name="rank_weekly">周榜</string>
+    <string name="rank_monthly">月榜</string>
+    <string name="rank_alltime">总榜</string>
+    <string name="tag_group_theme">主题</string>
+    <string name="tag_group_role">角色 / 扮演</string>
+    <string name="tag_group_special">特殊PLAY</string>
+    <string name="tag_group_other">其他</string>
 </resources>

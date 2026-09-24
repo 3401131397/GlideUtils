@@ -12,3 +12,4 @@
 .tools/
 build_apk.sh
 *.tar.gz
+app/build/

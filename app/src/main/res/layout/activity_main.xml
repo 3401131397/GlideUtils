@@ -1,191 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#1A1A2E">
+    android:background="@color/background">
 
-    <LinearLayout
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:layout_height="?attr/actionBarSize"
+        android:background="@android:color/transparent"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <!-- 标题 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="中国象棋AI助手"
-            android:textSize="26sp"
-            android:textColor="#E94560"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:paddingVertical="16dp" />
-
-        <!-- 状态卡片 -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#16213E"
-            android:padding="16dp"
-            android:layout_marginBottom="12dp"
-            android:elevation="4dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="服务状态"
-                android:textSize="14sp"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_status"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="未启动"
-                android:textSize="18sp"
-                android:textColor="#FFFFFF"
-                android:textStyle="bold"
-                android:paddingTop="4dp" />
-
-            <TextView
-                android:id="@+id/tv_move_count_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="当前步数"
-                android:textSize="14sp"
-                android:textColor="#888888"
-                android:paddingTop="12dp" />
-
-            <TextView
-                android:id="@+id/tv_move_count"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="22sp"
-                android:textColor="#E94560"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <!-- 棋局信息卡片 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#16213E"
-            android:padding="16dp"
-            android:layout_marginBottom="12dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="当前FEN"
-                android:textSize="14sp"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_fen"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="未识别"
-                android:textSize="11sp"
-                android:textColor="#CCCCCC"
-                android:fontFamily="monospace"
-                android:paddingTop="4dp" />
-        </LinearLayout>
-
-        <!-- AI分析卡片 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="#16213E"
-            android:padding="16dp"
-            android:layout_marginBottom="12dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="AI分析"
-                android:textSize="14sp"
-                android:textColor="#888888" />
-
-            <TextView
-                android:id="@+id/tv_best_move"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="--"
-                android:textSize="24sp"
-                android:textColor="#0F3460"
-                android:textStyle="bold"
-                android:background="#E94560"
-                android:padding="8dp"
-                android:layout_marginTop="4dp" />
-
-            <TextView
-                android:id="@+id/tv_score"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="评分: 0"
-                android:textSize="16sp"
-                android:textColor="#FFFFFF"
-                android:paddingTop="8dp" />
-
-            <TextView
-                android:id="@+id/tv_analysis"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="暂无分析"
-                android:textSize="12sp"
-                android:textColor="#AAAAAA"
-                android:paddingTop="4dp" />
-        </LinearLayout>
-
-        <!-- 控制按钮 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="44dp"
             android:orientation="horizontal"
-            android:layout_marginTop="8dp">
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_search"
+            android:layout_marginHorizontal="8dp">
 
-            <Button
-                android:id="@+id/btn_toggle_service"
-                android:layout_width="0dp"
-                android:layout_height="50dp"
-                android:layout_weight="1"
-                android:text="启动服务"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#0F3460"
-                android:layout_marginEnd="6dp" />
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_search"
+                android:layout_marginStart="12dp"
+                android:importantForAccessibility="no" />
 
-            <Button
-                android:id="@+id/btn_toggle_floating"
+            <EditText
+                android:id="@+id/et_search"
                 android:layout_width="0dp"
-                android:layout_height="50dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="开启悬浮窗"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#533483"
-                android:layout_marginStart="6dp" />
+                android:hint="@string/search_hint"
+                android:background="@null"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:textSize="14sp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/on_surface_variant"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1" />
         </LinearLayout>
+    </androidx.appcompat.widget.Toolbar>
 
-        <Button
-            android:id="@+id/btn_test_engine"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:text="测试本地引擎"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#E94560"
-            android:layout_marginTop="8dp" />
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/view_pager"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav_spacer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-        <Button
-            android:id="@+id/btn_settings"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:text="设置"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#16213E"
-            android:layout_marginTop="8dp" />
+    <Space
+        android:id="@+id/bottom_nav_spacer"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav" />
 
-    </LinearLayout>
-</ScrollView>
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_nav"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_glass"
+        app:labelVisibilityMode="labeled"
+        app:itemTextColor="@color/bottom_nav_color"
+        app:itemIconTint="@color/bottom_nav_color"
+        app:menu="@menu/bottom_nav_menu"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
