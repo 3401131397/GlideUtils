@@ -52,10 +52,19 @@ public class JMApiClient {
         return instance;
     }
 
+    public interface ApiSuccessCallback<T> {
+        void onSuccess(T result);
+    }
+
+    public interface ApiFailureCallback {
+        void onFailure(String error);
+    }
+
     public interface ApiCallback<T> {
         void onSuccess(T result);
         void onFailure(String error);
     }
+
 
     private String generateToken(String timestamp) {
         String input = timestamp + TOKEN_SECRET;
@@ -120,7 +129,8 @@ public class JMApiClient {
         }
     }
 
-    private void sendRequest(String path, String params, ApiCallback<String> callback) {
+    private void sendRequest(String path, String params,
+            ApiSuccessCallback<String> onSuccess, ApiFailureCallback onFailure) {
         new Thread(() -> {
             try {
                 String timestamp = String.valueOf(System.currentTimeMillis() / 1000);
@@ -153,22 +163,22 @@ public class JMApiClient {
                             String encryptedData = jsonObject.getString("data");
                             String decrypted = decrypt(encryptedData, timestamp);
                             if (decrypted != null) {
-                                mainHandler.post(() -> callback.onSuccess(decrypted));
+                                mainHandler.post(() -> onSuccess.onSuccess(decrypted));
                             } else {
-                                mainHandler.post(() -> callback.onFailure("Decryption failed"));
+                                mainHandler.post(() -> onFailure.onFailure("Decryption failed"));
                             }
                         } else {
-                            mainHandler.post(() -> callback.onFailure("API error code: " + code));
+                            mainHandler.post(() -> onFailure.onFailure("API error code: " + code));
                         }
                     } catch (JSONException e) {
-                        mainHandler.post(() -> callback.onFailure("JSON parse error: " + e.getMessage()));
+                        mainHandler.post(() -> onFailure.onFailure("JSON parse error: " + e.getMessage()));
                     }
                 } else {
-                    mainHandler.post(() -> callback.onFailure("HTTP error: " + responseCode));
+                    mainHandler.post(() -> onFailure.onFailure("HTTP error: " + responseCode));
                 }
                 connection.disconnect();
             } catch (Exception e) {
-                mainHandler.post(() -> callback.onFailure("Network error: " + e.getMessage()));
+                mainHandler.post(() -> onFailure.onFailure("Network error: " + e.getMessage()));
             }
         }).start();
     }
@@ -204,7 +214,7 @@ public class JMApiClient {
             } catch (JSONException e) {
                 callback.onFailure("Parse categories failed: " + e.getMessage());
             }
-        });
+        }, error -> callback.onFailure(error));
     }
 
     public void getSearchQueries(String categoryFilter, ApiCallback<List<String>> callback) {
@@ -220,7 +230,7 @@ public class JMApiClient {
             } catch (JSONException e) {
                 callback.onFailure("Parse search queries failed: " + e.getMessage());
             }
-        });
+        }, error -> callback.onFailure(error));
     }
 
     public void getSearch(String query, ApiCallback<List<MangaItem>> callback) {
@@ -245,7 +255,7 @@ public class JMApiClient {
             } catch (JSONException e) {
                 callback.onFailure("Parse search results failed: " + e.getMessage());
             }
-        });
+        }, error -> callback.onFailure(error));
     }
 
     public void getTagGroups(ApiCallback<List<TagItem>> callback) {
@@ -264,7 +274,7 @@ public class JMApiClient {
             } catch (JSONException e) {
                 callback.onFailure("Parse tag groups failed: " + e.getMessage());
             }
-        });
+        }, error -> callback.onFailure(error));
     }
 
     public void getFilter(String filter, ApiCallback<List<Object>> callback) {
@@ -296,6 +306,6 @@ public class JMApiClient {
             } catch (JSONException e) {
                 callback.onFailure("Parse filter failed: " + e.getMessage());
             }
-        });
+        }, error -> callback.onFailure(error));
     }
 }
