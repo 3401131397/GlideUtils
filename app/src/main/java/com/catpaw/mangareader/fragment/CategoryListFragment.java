@@ -18,17 +18,20 @@ import com.catpaw.mangareader.adapter.MangaListAdapter;
 import com.catpaw.mangareader.api.JMApiClient;
 import com.catpaw.mangareader.model.MangaItem;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class CategoryListFragment extends Fragment {
 
     public static final String ARG_CATEGORY_ID = "category_id";
+    public static final String ARG_FILTER_TYPE = "filter_type";
+    public static final String ARG_RANK_MODE = "rank_mode";
 
     private SwipeRefreshLayout swipeRefreshLayout;
     private RecyclerView recyclerView;
     private MangaListAdapter adapter;
     private String categoryId;
+    private String filterType;
+    private boolean rankMode;
 
     public CategoryListFragment() {
         super(R.layout.fragment_category_list);
@@ -38,6 +41,18 @@ public class CategoryListFragment extends Fragment {
         CategoryListFragment fragment = new CategoryListFragment();
         Bundle args = new Bundle();
         args.putString(ARG_CATEGORY_ID, categoryId);
+        args.putString(ARG_FILTER_TYPE, "mr");
+        args.putBoolean(ARG_RANK_MODE, false);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    public static CategoryListFragment newRankInstance(String rankFilter) {
+        CategoryListFragment fragment = new CategoryListFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_CATEGORY_ID, "0");
+        args.putString(ARG_FILTER_TYPE, rankFilter);
+        args.putBoolean(ARG_RANK_MODE, true);
         fragment.setArguments(args);
         return fragment;
     }
@@ -46,7 +61,9 @@ public class CategoryListFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            categoryId = getArguments().getString(ARG_CATEGORY_ID, "");
+            categoryId = getArguments().getString(ARG_CATEGORY_ID, "0");
+            filterType = getArguments().getString(ARG_FILTER_TYPE, "mr");
+            rankMode = getArguments().getBoolean(ARG_RANK_MODE, false);
         }
     }
 
@@ -81,12 +98,12 @@ public class CategoryListFragment extends Fragment {
     }
 
     private void loadMangaList() {
-        if (categoryId == null || categoryId.isEmpty()) {
-            swipeRefreshLayout.setRefreshing(false);
-            return;
+        if (categoryId == null) {
+            categoryId = "0";
         }
 
-        JMApiClient.getInstance().getSearch(categoryId, new JMApiClient.ApiCallback<List<MangaItem>>() {
+        JMApiClient.getInstance().getCategoryFilter(filterType, categoryId, 1,
+                new JMApiClient.ApiCallback<List<MangaItem>>() {
             @Override
             public void onSuccess(List<MangaItem> result) {
                 swipeRefreshLayout.setRefreshing(false);

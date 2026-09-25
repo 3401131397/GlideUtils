@@ -23,8 +23,8 @@ public class RankFragment extends Fragment {
     private ViewPager2 viewPager;
     private RankPagerAdapter pagerAdapter;
 
-    private static final String[] RANK_TITLES = {"Daily", "Weekly", "Monthly", "All Time"};
-    private static final String[] RANK_FILTERS = {"daily", "weekly", "monthly", "all"};
+    private static final String[] RANK_TITLES = {"日榜", "周榜", "月榜", "总榜"};
+    private static final String[] RANK_FILTERS = {"mv_t", "mv_w", "mv_m", "mv"};
 
     public RankFragment() {
         super(R.layout.fragment_rank);
@@ -60,7 +60,7 @@ public class RankFragment extends Fragment {
         @NonNull
         @Override
         public Fragment createFragment(int position) {
-            return CategoryListFragment.newInstance(RANK_FILTERS[position]);
+            return CategoryListFragment.newRankInstance(RANK_FILTERS[position]);
         }
 
         @Override

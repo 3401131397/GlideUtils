@@ -3,36 +3,41 @@ package com.catpaw.mangareader.api;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Base64;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
+import android.util.Log;
 
 import com.catpaw.mangareader.model.CategoryItem;
 import com.catpaw.mangareader.model.MangaItem;
 import com.catpaw.mangareader.model.TagItem;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 public class JMApiClient {
 
-    private static final String BASE_URL = "https://www.cdnggc.cc";
+    private static final String TAG = "JMApiClient";
+    private static final String BASE_URL = "https://www.cdngwc.cc";
     private static final String TOKEN_SECRET = "0WyJFBix1e6c7TqSg7XgDliOvQy3lASQ";
     private static final String KEY_SECRET = "nNbsEgIn8uIItm9d";
     private static final String IV_SECRET = "dygIVvYyTtpzc8wm";
@@ -40,17 +45,7 @@ public class JMApiClient {
 
     private static JMApiClient instance;
     private final Handler mainHandler;
-
-    private JMApiClient() {
-        mainHandler = new Handler(Looper.getMainLooper());
-    }
-
-    public static synchronized JMApiClient getInstance() {
-        if (instance == null) {
-            instance = new JMApiClient();
-        }
-        return instance;
-    }
+    private final OkHttpClient httpClient;
 
     public interface ApiSuccessCallback<T> {
         void onSuccess(T result);
@@ -65,6 +60,22 @@ public class JMApiClient {
         void onFailure(String error);
     }
 
+    private JMApiClient() {
+        mainHandler = new Handler(Looper.getMainLooper());
+        httpClient = new OkHttpClient.Builder()
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(15, TimeUnit.SECONDS)
+                .writeTimeout(15, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(true)
+                .build();
+    }
+
+    public static synchronized JMApiClient getInstance() {
+        if (instance == null) {
+            instance = new JMApiClient();
+        }
+        return instance;
+    }
 
     private String generateToken(String timestamp) {
         String input = timestamp + TOKEN_SECRET;
@@ -93,7 +104,7 @@ public class JMApiClient {
             }
             return sb.toString();
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+            Log.e(TAG, "MD5 algorithm not found", e);
             return "";
         }
     }
@@ -112,7 +123,6 @@ public class JMApiClient {
         try {
             byte[] keyBytes = generateKey(timestamp);
             byte[] ivBytes = generateIv(timestamp);
-
             byte[] encryptedBytes = Base64.decode(ciphertext, Base64.DEFAULT);
 
             SecretKeySpec secretKey = new SecretKeySpec(keyBytes, "AES");
@@ -124,43 +134,47 @@ public class JMApiClient {
             byte[] decrypted = cipher.doFinal(encryptedBytes);
             return new String(decrypted, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "Decrypt failed", e);
             return null;
         }
     }
 
     private void sendRequest(String path, String params,
             ApiSuccessCallback<String> onSuccess, ApiFailureCallback onFailure) {
-        new Thread(() -> {
-            try {
-                String timestamp = String.valueOf(System.currentTimeMillis() / 1000);
-                String token = generateToken(timestamp);
+        String timestamp = String.valueOf(System.currentTimeMillis() / 1000);
+        String token = generateToken(timestamp);
 
-                String urlWithParams = BASE_URL + path + "?token=" + token + "&t=" + timestamp + "&" + params;
+        String url = BASE_URL + path + "?token=" + token + "&t=" + timestamp;
+        if (params != null && !params.isEmpty()) {
+            url = url + "&" + params;
+        }
 
-                URL url = new URL(urlWithParams);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
-                connection.setConnectTimeout(15000);
-                connection.setReadTimeout(15000);
-                connection.setRequestProperty("User-Agent", "okhttp/4.9.3");
+        Log.d(TAG, "Request URL: " + url);
 
-                int responseCode = connection.getResponseCode();
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    BufferedReader reader = new BufferedReader(
-                            new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
-                    }
-                    reader.close();
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .addHeader("User-Agent", "okhttp/3.12.1")
+                .addHeader("tokenparam", timestamp + "," + VERSION)
+                .addHeader("token", token)
+                .build();
 
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Network error", e);
+                mainHandler.post(() -> onFailure.onFailure("Network error: " + e.getMessage()));
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) {
+                if (response.isSuccessful() && response.body() != null) {
                     try {
-                        JSONObject jsonObject = new JSONObject(response.toString());
-                        int code = jsonObject.getInt("code");
+                        String responseBody = response.body().string();
+                        JSONObject jsonObject = new JSONObject(responseBody);
+                        int code = jsonObject.optInt("code", -1);
                         if (code == 200) {
-                            String encryptedData = jsonObject.getString("data");
+                            String encryptedData = jsonObject.optString("data", "");
                             String decrypted = decrypt(encryptedData, timestamp);
                             if (decrypted != null) {
                                 mainHandler.post(() -> onSuccess.onSuccess(decrypted));
@@ -171,16 +185,18 @@ public class JMApiClient {
                             mainHandler.post(() -> onFailure.onFailure("API error code: " + code));
                         }
                     } catch (JSONException e) {
+                        Log.e(TAG, "JSON parse error", e);
                         mainHandler.post(() -> onFailure.onFailure("JSON parse error: " + e.getMessage()));
+                    } catch (IOException e) {
+                        Log.e(TAG, "IO error", e);
+                        mainHandler.post(() -> onFailure.onFailure("IO error: " + e.getMessage()));
                     }
                 } else {
-                    mainHandler.post(() -> onFailure.onFailure("HTTP error: " + responseCode));
+                    mainHandler.post(() -> onFailure.onFailure("HTTP error: " + response.code()));
                 }
-                connection.disconnect();
-            } catch (Exception e) {
-                mainHandler.post(() -> onFailure.onFailure("Network error: " + e.getMessage()));
+                response.close();
             }
-        }).start();
+        });
     }
 
     private String buildKeyValue(String... pairs) {
@@ -199,15 +215,15 @@ public class JMApiClient {
     }
 
     public void getCategories(ApiCallback<List<CategoryItem>> callback) {
-        sendRequest("/manga/filter/build", "", response -> {
+        sendRequest("/categories", "", response -> {
             try {
                 List<CategoryItem> categoryItems = new ArrayList<>();
                 JSONArray jsonArray = new JSONArray(response);
                 for (int i = 0; i < jsonArray.length(); i++) {
                     JSONObject obj = jsonArray.getJSONObject(i);
                     CategoryItem item = new CategoryItem();
-                    item.setCategoryId(obj.optString("categoryId", ""));
-                    item.setTitle(obj.optString("title", ""));
+                    item.setCategoryId(obj.optString("categoryId", String.valueOf(i)));
+                    item.setTitle(obj.optString("title", obj.optString("name", "Category " + i)));
                     categoryItems.add(item);
                 }
                 callback.onSuccess(categoryItems);
@@ -217,95 +233,67 @@ public class JMApiClient {
         }, error -> callback.onFailure(error));
     }
 
-    public void getSearchQueries(String categoryFilter, ApiCallback<List<String>> callback) {
-        String params = buildKeyValue("filter", categoryFilter);
-        sendRequest("/manga/search/params", params, response -> {
+    public void getCategoryFilter(String filterType, String category, int page,
+            ApiCallback<List<MangaItem>> callback) {
+        String params = buildKeyValue(
+                "o", filterType != null ? filterType : "mr",
+                "c", category != null ? category : "0",
+                "page", String.valueOf(page));
+        sendRequest("/categories/filter", params, response -> {
             try {
-                List<String> queries = new ArrayList<>();
-                JSONArray jsonArray = new JSONArray(response);
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    queries.add(jsonArray.getString(i));
-                }
-                callback.onSuccess(queries);
-            } catch (JSONException e) {
-                callback.onFailure("Parse search queries failed: " + e.getMessage());
-            }
-        }, error -> callback.onFailure(error));
-    }
-
-    public void getSearch(String query, ApiCallback<List<MangaItem>> callback) {
-        String params = buildKeyValue("query", query);
-        sendRequest("/manga/search", params, response -> {
-            try {
-                List<MangaItem> mangaItems = new ArrayList<>();
-                JSONArray jsonArray = new JSONArray(response);
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject obj = jsonArray.getJSONObject(i);
-                    MangaItem item = new MangaItem();
-                    item.setAlbumId(obj.optString("albumId", ""));
-                    item.setTitle(obj.optString("title", ""));
-                    item.setCoverUrl(obj.optString("coverUrl", ""));
-                    item.setTags(obj.optString("tags", ""));
-                    item.setViews(obj.optString("views", ""));
-                    item.setCategory(obj.optString("category", ""));
-                    item.setSummary(obj.optString("summary", ""));
-                    mangaItems.add(item);
-                }
+                List<MangaItem> mangaItems = parseMangaList(response);
                 callback.onSuccess(mangaItems);
-            } catch (JSONException e) {
-                callback.onFailure("Parse search results failed: " + e.getMessage());
-            }
-        }, error -> callback.onFailure(error));
-    }
-
-    public void getTagGroups(ApiCallback<List<TagItem>> callback) {
-        sendRequest("/manga/tag/groups", "", response -> {
-            try {
-                List<TagItem> tagItems = new ArrayList<>();
-                JSONArray jsonArray = new JSONArray(response);
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject obj = jsonArray.getJSONObject(i);
-                    TagItem item = new TagItem();
-                    item.setTagName(obj.optString("tagName", ""));
-                    item.setTagGroup(obj.optString("tagGroup", ""));
-                    tagItems.add(item);
-                }
-                callback.onSuccess(tagItems);
-            } catch (JSONException e) {
-                callback.onFailure("Parse tag groups failed: " + e.getMessage());
-            }
-        }, error -> callback.onFailure(error));
-    }
-
-    public void getFilter(String filter, ApiCallback<List<Object>> callback) {
-        String params = buildKeyValue("filter", filter);
-        sendRequest("/manga/filter", params, response -> {
-            try {
-                List<Object> results = new ArrayList<>();
-                JSONArray jsonArray = new JSONArray(response);
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject obj = jsonArray.getJSONObject(i);
-                    if (obj.has("tagName")) {
-                        TagItem tag = new TagItem();
-                        tag.setTagName(obj.optString("tagName", ""));
-                        tag.setTagGroup(obj.optString("tagGroup", ""));
-                        results.add(tag);
-                    } else {
-                        MangaItem item = new MangaItem();
-                        item.setAlbumId(obj.optString("albumId", ""));
-                        item.setTitle(obj.optString("title", ""));
-                        item.setCoverUrl(obj.optString("coverUrl", ""));
-                        item.setTags(obj.optString("tags", ""));
-                        item.setViews(obj.optString("views", ""));
-                        item.setCategory(obj.optString("category", ""));
-                        item.setSummary(obj.optString("summary", ""));
-                        results.add(item);
-                    }
-                }
-                callback.onSuccess(results);
             } catch (JSONException e) {
                 callback.onFailure("Parse filter failed: " + e.getMessage());
             }
         }, error -> callback.onFailure(error));
+    }
+
+    public void getSearch(String query, String orderBy, int page,
+            ApiCallback<List<MangaItem>> callback) {
+        String params = buildKeyValue(
+                "search_query", query,
+                "o", orderBy != null ? orderBy : "mr",
+                "page", String.valueOf(page));
+        sendRequest("/search", params, response -> {
+            try {
+                List<MangaItem> mangaItems = parseMangaList(response);
+                callback.onSuccess(mangaItems);
+            } catch (JSONException e) {
+                callback.onFailure("Parse search failed: " + e.getMessage());
+            }
+        }, error -> callback.onFailure(error));
+    }
+
+    public void getAlbumDetail(String albumId,
+            ApiCallback<String> callback) {
+        sendRequest("/album/" + albumId, "", response -> {
+            callback.onSuccess(response);
+        }, error -> callback.onFailure(error));
+    }
+
+    public void getChapterDetail(String chapterId,
+            ApiCallback<String> callback) {
+        sendRequest("/chapter/" + chapterId, "", response -> {
+            callback.onSuccess(response);
+        }, error -> callback.onFailure(error));
+    }
+
+    private List<MangaItem> parseMangaList(String jsonStr) throws JSONException {
+        List<MangaItem> mangaItems = new ArrayList<>();
+        JSONArray jsonArray = new JSONArray(jsonStr);
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject obj = jsonArray.getJSONObject(i);
+            MangaItem item = new MangaItem();
+            item.setAlbumId(obj.optString("albumId", String.valueOf(i)));
+            item.setTitle(obj.optString("title", ""));
+            item.setCoverUrl(obj.optString("coverUrl", obj.optString("cover", "")));
+            item.setTags(obj.optString("tags", ""));
+            item.setViews(obj.optString("views", ""));
+            item.setCategory(obj.optString("category", ""));
+            item.setSummary(obj.optString("summary", ""));
+            mangaItems.add(item);
+        }
+        return mangaItems;
     }
 }
