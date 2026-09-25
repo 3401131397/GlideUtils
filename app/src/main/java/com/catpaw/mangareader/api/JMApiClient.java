@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import okhttp3.Call;
@@ -36,10 +35,10 @@ public class JMApiClient {
 
     private static final String TAG = "JMApiClient";
     private static final String BASE_URL = "https://www.cdngwc.cc";
-    private static final String TOKEN_SECRET = "0WyJFBix1e6c7TqSg7XgDliOvQy3lASQ";
-    private static final String KEY_SECRET = "nNbsEgIn8uIItm9d";
-    private static final String IV_SECRET = "dygIVvYyTtpzc8wm";
-    private static final String VERSION = "1.7.1";
+    // 正确常量值 (来源: JMComic-Crawler-Python 开源项目 github.com/bigbanging/JMComic-Crawler-Python)
+    private static final String APP_TOKEN_SECRET = "18comicAPP";
+    private static final String APP_DATA_SECRET = "185Hcomic3PAPP7R";
+    private static final String APP_VERSION = "1.7.0";
     private static final String USER_AGENT = "okhttp/3.12.1";
     private static final String COOKIE = "ipcountry=HK";
 
@@ -96,43 +95,41 @@ public class JMApiClient {
         }
     }
 
-    private byte[] hexToBytes(String hex) {
-        int len = hex.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-                    + Character.digit(hex.charAt(i + 1), 16));
-        }
-        return data;
-    }
-
     private String generateToken(String timestamp) {
-        return md5(timestamp + TOKEN_SECRET);
+        return md5(timestamp + APP_TOKEN_SECRET);
     }
 
+    /**
+     * 生成 AES 解密密钥
+     * 算法: md5hex(timestamp + APP_DATA_SECRET) 的 ASCII 字节 (32字节 = 256位)
+     */
     private byte[] generateKey(String timestamp) {
-        String input = timestamp + KEY_SECRET + VERSION;
-        return hexToBytes(md5(input));
-    }
-
-    private byte[] generateIv(String timestamp) {
-        String input = timestamp + IV_SECRET + VERSION;
-        return md5(input).substring(0, 16).getBytes(StandardCharsets.UTF_8);
+        return md5(timestamp + APP_DATA_SECRET).getBytes(StandardCharsets.UTF_8);
     }
 
     private String decrypt(String ciphertext, String timestamp) {
         try {
             byte[] keyBytes = generateKey(timestamp);
-            byte[] ivBytes = generateIv(timestamp);
             byte[] encrypted = Base64.decode(ciphertext, Base64.DEFAULT);
 
             SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
-            IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
 
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
+            // JMAPi 使用 AES-ECB 模式 (不是 CBC!)，无 IV
+            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, keySpec);
 
-            return new String(cipher.doFinal(encrypted), StandardCharsets.UTF_8);
+            byte[] decrypted = cipher.doFinal(encrypted);
+
+            // 手动去除 PKCS7 padding
+            int padLen = decrypted[decrypted.length - 1] & 0xFF;
+            if (padLen < 1 || padLen > 16) {
+                Log.e(TAG, "Invalid PKCS7 padding: " + padLen);
+                return null;
+            }
+            byte[] result = new byte[decrypted.length - padLen];
+            System.arraycopy(decrypted, 0, result, 0, result.length);
+
+            return new String(result, StandardCharsets.UTF_8);
         } catch (Exception e) {
             Log.e(TAG, "Decrypt error", e);
             return null;
@@ -164,7 +161,7 @@ public class JMApiClient {
                 .url(url)
                 .get()
                 .addHeader("User-Agent", USER_AGENT)
-                .addHeader("tokenparam", timestamp + "," + VERSION)
+                .addHeader("tokenparam", timestamp + "," + APP_VERSION)
                 .addHeader("token", token)
                 .addHeader("cookie", COOKIE)
                 .build();
