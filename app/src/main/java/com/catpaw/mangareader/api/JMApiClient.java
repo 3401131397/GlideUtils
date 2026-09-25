@@ -257,18 +257,58 @@ public class JMApiClient {
 
     private List<MangaItem> parseMangaList(String jsonStr) throws JSONException {
         List<MangaItem> items = new ArrayList<>();
-        JSONArray arr = new JSONArray(jsonStr);
-        for (int i = 0; i < arr.length(); i++) {
-            JSONObject obj = arr.getJSONObject(i);
-            MangaItem item = new MangaItem();
-            item.setAlbumId(obj.optString("albumId", String.valueOf(i)));
-            item.setTitle(obj.optString("title", ""));
-            item.setCoverUrl(obj.optString("coverUrl", obj.optString("cover", "")));
-            item.setTags(obj.optString("tags", ""));
-            item.setViews(obj.optString("views", ""));
-            item.setCategory(obj.optString("category", ""));
-            item.setSummary(obj.optString("summary", ""));
-            items.add(item);
+
+        if (jsonStr.trim().startsWith("{")) {
+            // 响应是 JSON 对象: {"content": [["album_id", {info}], ...], "total": N}
+            JSONObject wrapper = new JSONObject(jsonStr);
+            JSONArray content = wrapper.getJSONArray("content");
+            for (int i = 0; i < content.length(); i++) {
+                // JMAPi 格式: [album_id, {name, tags, ...}]
+                JSONArray entry = content.getJSONArray(i);
+                String albumId = entry.optString(0, String.valueOf(i));
+                JSONObject info = entry.optJSONObject(1);
+                if (info == null) continue;
+
+                MangaItem item = new MangaItem();
+                item.setAlbumId(albumId);
+                item.setTitle(info.optString("name", info.optString("title", "")));
+                item.setCoverUrl(info.optString("cover", info.optString("image", "")));
+
+                // tags 可能是数组或字符串
+                if (info.has("tags")) {
+                    Object tagsObj = info.get("tags");
+                    if (tagsObj instanceof JSONArray) {
+                        JSONArray tagsArr = (JSONArray) tagsObj;
+                        StringBuilder sb = new StringBuilder();
+                        for (int j = 0; j < tagsArr.length(); j++) {
+                            if (j > 0) sb.append(", ");
+                            sb.append(tagsArr.optString(j));
+                        }
+                        item.setTags(sb.toString());
+                    } else {
+                        item.setTags(String.valueOf(tagsObj));
+                    }
+                }
+
+                item.setViews(info.optString("views", info.optString("total_view", "")));
+                item.setSummary(info.optString("description", info.optString("summary", "")));
+                items.add(item);
+            }
+        } else {
+            // 响应是纯 JSON 数组
+            JSONArray arr = new JSONArray(jsonStr);
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject obj = arr.getJSONObject(i);
+                MangaItem item = new MangaItem();
+                item.setAlbumId(obj.optString("albumId", obj.optString("id", String.valueOf(i))));
+                item.setTitle(obj.optString("title", obj.optString("name", "")));
+                item.setCoverUrl(obj.optString("coverUrl", obj.optString("cover", obj.optString("image", ""))));
+                item.setTags(obj.optString("tags", ""));
+                item.setViews(obj.optString("views", ""));
+                item.setCategory(obj.optString("category", ""));
+                item.setSummary(obj.optString("summary", obj.optString("description", "")));
+                items.add(item);
+            }
         }
         return items;
     }
